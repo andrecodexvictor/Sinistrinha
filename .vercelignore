@@ -1,0 +1,13 @@
+apps/
+probability_engine/
+venv/
+skill/
+*.py
+*.sql
+manage.py
+Dockerfile
+docker-compose.yml
+nginx.conf
+requirements.txt
+.env
+.env.*
