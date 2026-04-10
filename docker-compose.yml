@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    command: daphne -b 0.0.0.0 -p 8000 sinistrinha.asgi:application
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - PROBABILITY_ENGINE_URL=http://probability_engine:8001
+    depends_on:
+      - redis
+      - probability_engine
+
+  probability_engine:
+    build:
+      context: .
+      dockerfile: probability_engine/Dockerfile
+    ports:
+      - "8001:8001"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  celery:
+    build: .
+    command: celery -A sinistrinha worker -l info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    environment:
+      - PROBABILITY_ENGINE_URL=http://probability_engine:8001
+    depends_on:
+      - redis
+      - probability_engine
+
+  celery-beat:
+    build: .
+    command: celery -A sinistrinha beat -l info
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./staticfiles:/app/static
+    depends_on:
+      - web
+      - probability_engine
+
+volumes:
+  redis_data:
