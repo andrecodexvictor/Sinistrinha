@@ -8,7 +8,7 @@ import { useAuthStore } from '../../store/authStore';
 export default function AppLayout() {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { isAuthenticated, isLoading, restoreSession } = useAuthStore();
+  const { restoreSession } = useAuthStore();
 
   useEffect(() => {
     restoreSession();
