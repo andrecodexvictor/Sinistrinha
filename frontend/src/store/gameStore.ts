@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { SpinResult, BackendSpinResponse } from '../types/game.types';
-import { SYMBOLS, SYMBOL_KEYS, backendToReels } from '../types/game.types';
+import { SYMBOL_KEYS, backendToReels } from '../types/game.types';
 import api from '../lib/api';
 import { useAuthStore } from './authStore';
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import Symbol from './Symbol';
 import { SYMBOL_KEYS } from '../../types/game.types';
@@ -14,18 +14,10 @@ const TOTAL_EXTRA_SPINS = 20; // How many symbols to spin through before stoppin
 
 export default function Reel({ index, isSpinning, finalSymbols, winningIndices }: ReelProps) {
   const controls = useAnimation();
-  const [strip, setStrip] = useState<string[]>([]);
-  const isFirstRender = useRef(true);
+  const [strip, setStrip] = useState<string[]>(finalSymbols);
 
   // Initialize strip or build the "spinning" strip
   useEffect(() => {
-    if (isFirstRender.current) {
-      // First render: Show the initial 3 symbols
-      setStrip(finalSymbols);
-      isFirstRender.current = false;
-      return;
-    }
-
     if (isSpinning) {
       // Create a long strip of random symbols + the target final 3 at the top
       const randomFiller = Array.from({ length: TOTAL_EXTRA_SPINS }, () => 
@@ -36,7 +28,7 @@ export default function Reel({ index, isSpinning, finalSymbols, winningIndices }
       // So the layout from bottom to top needs to be [Current View] -> [Random] -> [Final View]
       // To loop seamlessly, we'll construct the array accordingly.
       
-      setStrip([...finalSymbols, ...randomFiller, ...strip.slice(0, 3)]);
+      setStrip(prevStrip => [...finalSymbols, ...randomFiller, ...prevStrip.slice(0, 3)]);
 
       // Start the spin animation with staggered delay based on reel index
       controls.set({ y: `-${(TOTAL_EXTRA_SPINS + 3) * 33.33}%` }); // Start near the bottom of strip
@@ -50,6 +42,7 @@ export default function Reel({ index, isSpinning, finalSymbols, winningIndices }
         }
       });
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSpinning, finalSymbols, index, controls]);
 
   return (

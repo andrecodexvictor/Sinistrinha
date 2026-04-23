@@ -12,6 +12,7 @@ export default function AppLayout() {
 
   useEffect(() => {
     restoreSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Redirect to login if not authenticated (after session restore completes)
