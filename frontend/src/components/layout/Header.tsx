@@ -1,19 +1,20 @@
 import { useAuthStore } from '../../store/authStore';
-import { useGameStore } from '../../store/gameStore';
-import { Wallet, Trophy, User, Menu } from 'lucide-react'; // <- Import do Menu adicionado
-import { Link } from 'react-router-dom';
+import { Wallet, Trophy, User, Menu } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 import logoImg from '../../assets/logo.png';
 
 interface HeaderProps {
   onLoginClick: () => void;
   onRegisterClick: () => void;
-  onMenuClick?: () => void; // <- Propriedade adicionada
+  onMenuClick?: () => void;
 }
 
 export default function Header({ onLoginClick, onRegisterClick, onMenuClick }: HeaderProps) {
   const { isAuthenticated, user, logout } = useAuthStore();
-  const { balance, level } = useGameStore();
+  const navigate = useNavigate();
+  const balance = user?.balance ?? 0;
+  const level = user?.level ?? 1;
 
   return (
     <header className="sticky top-0 z-40 w-full h-16 bg-brand-gray/95 backdrop-blur-md border-b border-white/5 flex items-center justify-between px-4 lg:px-6 shadow-xl">
@@ -56,7 +57,10 @@ export default function Header({ onLoginClick, onRegisterClick, onMenuClick }: H
             </div>
 
             {/* Deposit Button */}
-            <button className="hidden sm:flex items-center justify-center bg-gradient-to-r from-brand-red to-red-600 hover:from-red-500 hover:to-red-400 text-white px-4 py-1.5 rounded-md font-bold text-sm tracking-wide shadow-[0_0_10px_rgba(139,0,0,0.5)] hover:shadow-[0_0_20px_rgba(255,0,0,0.6)] transition-all">
+            <button 
+              onClick={() => navigate('/wallet')}
+              className="hidden sm:flex items-center justify-center bg-gradient-to-r from-brand-red to-red-600 hover:from-red-500 hover:to-red-400 text-white px-4 py-1.5 rounded-md font-bold text-sm tracking-wide shadow-[0_0_10px_rgba(139,0,0,0.5)] hover:shadow-[0_0_20px_rgba(255,0,0,0.6)] transition-all"
+            >
               <Wallet className="w-4 h-4 mr-2" />
               DEPOSITAR
             </button>
@@ -77,10 +81,16 @@ export default function Header({ onLoginClick, onRegisterClick, onMenuClick }: H
                   <p className="text-xs text-gray-400 truncate">{user?.email}</p>
                 </div>
                 <div className="p-2">
-                  <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white rounded transition-colors">
-                    Perfil
+                  <button 
+                    onClick={() => navigate('/wallet')}
+                    className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white rounded transition-colors"
+                  >
+                    Carteira
                   </button>
-                  <button className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white rounded transition-colors">
+                  <button 
+                    onClick={() => navigate('/history')}
+                    className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-white/5 hover:text-white rounded transition-colors"
+                  >
                     Histórico
                   </button>
                   <button

@@ -170,15 +170,10 @@ class SpinView(views.APIView):
 
     @staticmethod
     def _contribute_to_jackpot(bet_amount: Decimal) -> None:
-        """Add 2% of the bet to the progressive jackpot pool."""
+        """Add 2% of the bet to the progressive jackpot pool (race-safe)."""
         try:
-            pool, _ = JackpotPool.objects.get_or_create(
-                id=1,
-                defaults={"current_amount": Decimal("1000.00")},
-            )
-            contribution = bet_amount * Decimal("0.02")
-            pool.current_amount += contribution
-            pool.save(update_fields=["current_amount"])
+            from .jackpot import JackpotSystem
+            JackpotSystem().contribute(bet_amount)
         except Exception as e:
             logger.error(f"Failed to update jackpot pool: {e}")
 
@@ -270,3 +265,39 @@ class UserSpinHistoryView(generics.ListAPIView):
         return SpinHistory.objects.filter(
             user=self.request.user.profile
         ).order_by('-timestamp')
+
+
+class FreeSpinView(views.APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        from .free_spins import FreeSpinSystem
+        fs_system = FreeSpinSystem()
+        info = fs_system.get_free_spin_info(request.user.profile)
+        return Response(info, status=status.HTTP_200_OK)
+
+
+class LevelProgressView(views.APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request):
+        profile = request.user.profile
+        try:
+            current_level_config = LevelConfig.objects.get(level=profile.level)
+            next_level_config = LevelConfig.objects.filter(level__gt=profile.level).order_by('level').first()
+            xp_required_next = next_level_config.xp_required if next_level_config else current_level_config.xp_required
+            
+            data = {
+                "level": profile.level,
+                "current_xp": profile.xp,
+                "next_level_xp": xp_required_next,
+                "is_max_level": next_level_config is None,
+            }
+        except LevelConfig.DoesNotExist:
+            data = {
+                "level": profile.level,
+                "current_xp": profile.xp,
+                "next_level_xp": 100,
+                "is_max_level": False,
+            }
+        return Response(data, status=status.HTTP_200_OK)

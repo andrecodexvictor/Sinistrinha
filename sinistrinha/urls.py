@@ -1,4 +1,5 @@
 from django.urls import path, include
+from django.http import JsonResponse
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 
 from apps.game.admin import CasinoDashboardAdminSite
@@ -11,6 +12,7 @@ from django.contrib import admin as django_admin
 admin_site._registry = django_admin.site._registry
 
 urlpatterns = [
+    path('health/', lambda r: JsonResponse({'status': 'ok', 'service': 'sinistrinha'})),
     path('admin/', admin_site.urls),
     # OpenAPI Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

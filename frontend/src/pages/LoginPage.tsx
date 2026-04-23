@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 import logoImg from '../assets/logo.png';
 
 const loginSchema = z.object({
-    email: z.string().min(1, 'Email é obrigatório'),
+    username: z.string().min(1, 'Usuário é obrigatório'),
     password: z.string().min(6, 'Senha deve ter no mínimo 6 caracteres'),
 });
 
@@ -18,32 +18,24 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
     const navigate = useNavigate();
-    const [error, setError] = useState<string | null>(null);
-    const { login, setLoading, isLoading } = useAuthStore();
+    const { loginAsync, isLoading, error } = useAuthStore();
+    const [localError, setLocalError] = useState<string | null>(null);
 
-    const { register, handleSubmit, formState: { errors }, reset } = useRHForm<LoginForm>({
+    const { register, handleSubmit, formState: { errors } } = useRHForm<LoginForm>({
         resolver: zodResolver(loginSchema)
     });
 
     const onSubmit = async (data: LoginForm) => {
-        setError(null);
-        setLoading(true);
-
-        // Simulating API call
-        setTimeout(() => {
-            if (data.email === 'demo' && data.password === '123456') {
-                login(
-                    { id: '1', username: 'DemoPlayer', email: 'demo@demo.com', level: 1, xp: 0, balance: 1000, createdAt: new Date().toISOString() },
-                    { access: 'fake-token', refresh: 'fake-refresh' }
-                );
-                reset();
-                navigate('/');
-            } else {
-                setError('Credenciais inválidas. Tente: demo / 123456');
-            }
-            setLoading(false);
-        }, 1500);
+        setLocalError(null);
+        const success = await loginAsync(data.username, data.password);
+        if (success) {
+            navigate('/');
+        } else {
+            setLocalError(useAuthStore.getState().error);
+        }
     };
+
+    const displayError = localError || error;
 
     return (
         <div className="min-h-screen bg-[#050508] bg-[url('https://images.unsplash.com/photo-1596838132731-3301c3fd4317?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center flex items-center justify-center p-6 relative overflow-hidden">
@@ -72,25 +64,25 @@ export default function LoginPage() {
 
                     <p className="text-xs text-gray-400 mb-8 font-body">CASSINO</p>
 
-                    {error && (
+                    {displayError && (
                         <motion.div
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             className="w-full bg-red-500/10 border border-brand-red/50 text-brand-red px-4 py-3 rounded mb-6 text-sm font-body"
                         >
-                            {error}
+                            {displayError}
                         </motion.div>
                     )}
 
                     <form onSubmit={handleSubmit(onSubmit)} className="w-full space-y-5">
                         <div>
-                            <label className="block text-xs font-bold text-gray-400 mb-2 font-display2">EMAIL OU USUÁRIO</label>
+                            <label className="block text-xs font-bold text-gray-400 mb-2 font-display2">USUÁRIO</label>
                             <input
-                                {...register('email')}
+                                {...register('username')}
                                 className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:border-brand-gold/50 focus:ring-1 focus:ring-brand-gold/50 transition-all font-body text-sm"
-                                placeholder="hacker@cassino.com"
+                                placeholder="seu_usuario"
                             />
-                            {errors.email && <p className="text-brand-red text-xs mt-1 font-body">{errors.email.message}</p>}
+                            {errors.username && <p className="text-brand-red text-xs mt-1 font-body">{errors.username.message}</p>}
                         </div>
 
                         <div>
@@ -102,12 +94,6 @@ export default function LoginPage() {
                                 placeholder="••••••••"
                             />
                             {errors.password && <p className="text-brand-red text-xs mt-1 font-body">{errors.password.message}</p>}
-                        </div>
-
-                        <div className="flex justify-end">
-                            <button type="button" className="text-xs text-brand-gold hover:text-yellow-400 transition-colors font-body">
-                                Esqueceu a senha?
-                            </button>
                         </div>
 
                         <motion.button

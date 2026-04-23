@@ -1,12 +1,26 @@
+import { useEffect } from 'react';
 import SlotMachine from '../components/game/SlotMachine';
 import BetControls from '../components/game/BetControls';
 import LevelProgress from '../components/game/LevelProgress';
+import { useGameStore } from '../store/gameStore';
+import { useCasinoStore } from '../store/casinoStore';
 
 // 1. Salve a imagem do Freepik na pasta assets e importe aqui:
 import bgCassino from '../assets/bg-gif.gif'; 
 import InteractiveGorilla from '../components/game/InteractiveGorilla';
 
 export default function GamePage() {
+  const jackpotValue = useGameStore((s) => s.jackpotValue);
+
+  useEffect(() => {
+    useGameStore.getState().syncFromAuth();
+    useGameStore.getState().fetchJackpot();
+    useCasinoStore.getState().connectWebSocket();
+  }, []);
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+
   return (
     <div 
       className="w-full min-h-full p-4 lg:p-8 flex flex-col items-center justify-center relative overflow-hidden bg-[#050508] bg-cover bg-center"
@@ -27,7 +41,7 @@ export default function GamePage() {
           <div className="text-center">
             <h2 className="text-gray-400 font-display2 tracking-[0.2em] text-sm md:text-md mb-2 uppercase">Mega Acumulado</h2>
             <div className="text-4xl md:text-5xl lg:text-6xl font-numbers font-black gold-gradient-text animate-pulse-glow drop-shadow-2xl">
-              R$ 25.480,90
+              {formatCurrency(jackpotValue)}
             </div>
           </div>
           

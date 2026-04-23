@@ -1,0 +1,176 @@
+name: Sinistrinha CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  PYTHON_VERSION: '3.12'
+  NODE_VERSION: '20'
+
+jobs:
+  # ─────────────────────────────────────────────
+  # Backend Tests & Lint
+  # ─────────────────────────────────────────────
+  backend:
+    name: Backend CI
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Copy env
+        run: cp .env.example .env
+      - name: Run migrations
+        run: python manage.py migrate --settings=sinistrinha.settings.dev --noinput
+        env:
+          DJANGO_SETTINGS_MODULE: sinistrinha.settings.dev
+      - name: Django system check
+        run: python manage.py check --settings=sinistrinha.settings.dev
+        env:
+          DJANGO_SETTINGS_MODULE: sinistrinha.settings.dev
+      - name: Run tests
+        run: python -m pytest --tb=short -q
+        env:
+          DJANGO_SETTINGS_MODULE: sinistrinha.settings.dev
+
+  # ─────────────────────────────────────────────
+  # Security Scan (DevSecOps)
+  # ─────────────────────────────────────────────
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # Python security scanner
+      - name: Install Bandit
+        run: pip install bandit
+      - name: Run Bandit (Python security linter)
+        run: bandit -r apps/ sinistrinha/ -ll --format json -o bandit-report.json || true
+      - name: Check Bandit results
+        run: |
+          if [ -f bandit-report.json ]; then
+            HIGH=$(python -c "import json; r=json.load(open('bandit-report.json')); print(len([x for x in r.get('results',[]) if x['issue_severity']=='HIGH']))")
+            if [ "$HIGH" -gt 0 ]; then
+              echo "::warning::Bandit found $HIGH high-severity issues"
+              cat bandit-report.json | python -m json.tool
+            fi
+          fi
+
+      # Node.js dependency audit
+      - name: npm audit
+        working-directory: frontend
+        run: npm audit --audit-level=high || true
+
+      # Secrets detection
+      - name: Check for hardcoded secrets
+        run: |
+          echo "Checking for potential hardcoded secrets..."
+          FOUND=$(grep -rn "eyJhbGciOi\|sk_live_\|sk_test_\|AKIA\|service_role" --include="*.py" --include="*.ts" --include="*.tsx" --include="*.env.example" . || true)
+          if [ -n "$FOUND" ]; then
+            echo "::error::Potential hardcoded secrets found!"
+            echo "$FOUND"
+            exit 1
+          fi
+          echo "✅ No hardcoded secrets detected"
+
+  # ─────────────────────────────────────────────
+  # Frontend Build & Lint
+  # ─────────────────────────────────────────────
+  frontend:
+    name: Frontend CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: TypeScript compile check
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        run: npm run build
+
+  # ─────────────────────────────────────────────
+  # Probability Engine
+  # ─────────────────────────────────────────────
+  probability-engine:
+    name: Probability Engine CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: probability_engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: pip install fastapi uvicorn pydantic numpy
+      - name: Syntax check
+        run: python -c "import main; print('✅ Probability engine imports OK')"
+
+  # ─────────────────────────────────────────────
+  # Docker Compose Smoke Test
+  # ─────────────────────────────────────────────
+  docker-smoke:
+    name: Docker Smoke Test
+    runs-on: ubuntu-latest
+    needs: [backend, frontend, security]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Copy env
+        run: cp .env.example .env
+      - name: Build containers
+        run: docker compose build
+      - name: Start services
+        run: |
+          docker compose up -d redis probability_engine
+          sleep 5
+          docker compose up -d web
+          sleep 8
+          docker compose up -d nginx
+          sleep 3
+      - name: Health check — Django
+        run: |
+          curl --fail --retry 5 --retry-delay 3 http://localhost:8000/health/ || exit 1
+      - name: Health check — Probability Engine
+        run: |
+          docker compose exec -T probability_engine python -c "import urllib.request; print(urllib.request.urlopen('http://localhost:8001/health').read().decode())"
+      - name: Health check — Redis
+        run: |
+          docker compose exec -T redis redis-cli ping | grep PONG
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v

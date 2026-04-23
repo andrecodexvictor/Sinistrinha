@@ -5,7 +5,7 @@ from django.core.asgi import get_asgi_application
 from channels.auth import AuthMiddlewareStack
 from apps.casino.routing import websocket_urlpatterns
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sinistrinha.settings.dev')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'sinistrinha.settings.prod')
 # Initialize django before importing routing
 django.setup()
 

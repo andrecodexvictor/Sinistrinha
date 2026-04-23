@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   web:
     build: .
@@ -12,16 +10,25 @@ services:
       - .env
     environment:
       - PROBABILITY_ENGINE_URL=http://probability_engine:8001
+      - REDIS_URL=redis://redis:6379/1
+      - DJANGO_SETTINGS_MODULE=sinistrinha.settings.prod
     depends_on:
-      - redis
-      - probability_engine
+      redis:
+        condition: service_healthy
+      probability_engine:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   probability_engine:
     build:
       context: .
       dockerfile: probability_engine/Dockerfile
-    ports:
-      - "8001:8001"
+    expose:
+      - "8001"
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"]
@@ -35,6 +42,11 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
 
   celery:
     build: .
@@ -45,9 +57,13 @@ services:
       - .env
     environment:
       - PROBABILITY_ENGINE_URL=http://probability_engine:8001
+      - REDIS_URL=redis://redis:6379/1
+      - DJANGO_SETTINGS_MODULE=sinistrinha.settings.prod
     depends_on:
-      - redis
-      - probability_engine
+      redis:
+        condition: service_healthy
+      probability_engine:
+        condition: service_healthy
 
   celery-beat:
     build: .
@@ -56,8 +72,12 @@ services:
       - .:/app
     env_file:
       - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/1
+      - DJANGO_SETTINGS_MODULE=sinistrinha.settings.prod
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
 
   nginx:
     image: nginx:alpine
@@ -66,9 +86,10 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ./staticfiles:/app/static
+      - ./frontend/dist:/app/frontend
     depends_on:
-      - web
-      - probability_engine
+      web:
+        condition: service_healthy
 
 volumes:
   redis_data:

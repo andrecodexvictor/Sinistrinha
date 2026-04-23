@@ -11,20 +11,35 @@ export interface SlotSymbol {
   multiplier: number;
 }
 
-export interface SpinResult {
-  reels: string[][]; // 5 reels x 3 visible symbols each
-  winningLines: WinLine[];
-  totalWin: number;
-  xpGained: number;
-  newLevel?: number;
-  jackpot: boolean;
+/** Exact shape returned by POST /api/game/spin/ */
+export interface BackendSpinResponse {
+  spin_id: number;
+  reels: string[];            // flat list of 5 symbol keys (middle row)
+  payout: number;
+  combination_type: string;
+  is_jackpot: boolean;
+  multiplier: number;
+  free_spins_awarded: number;
+  xp_earned: number;
+  new_balance: number;
+  new_level: number;
+  new_xp: number;
+  free_spins_remaining: number;
+  bonuses: Array<Record<string, unknown>>;
+  winning_symbol: string | null;
+  wild_used: boolean;
 }
 
-export interface WinLine {
-  lineIndex: number;
-  symbols: string[];
+/** UI-friendly spin result (derived from backend response) */
+export interface SpinResult {
+  reels: string[][];          // 5 reels x 3 visible symbols each
+  totalWin: number;
+  xpGained: number;
+  jackpot: boolean;
+  combinationType: string;
   multiplier: number;
-  payout: number;
+  freeSpinsAwarded: number;
+  winningSymbol: string | null;
 }
 
 export interface GameState {
@@ -39,6 +54,19 @@ export interface GameState {
   reels: string[][];
   lastResult: SpinResult | null;
   jackpotValue: number;
+  freeSpins: number;
+}
+
+/**
+ * Convert the flat 5-symbol backend array into a 5x3 grid for UI display.
+ * The backend symbols become the middle row; top and bottom are randomised.
+ */
+export function backendToReels(flatReels: string[]): string[][] {
+  return flatReels.map((middleSym) => {
+    const top = SYMBOL_KEYS[Math.floor(Math.random() * SYMBOL_KEYS.length)];
+    const bottom = SYMBOL_KEYS[Math.floor(Math.random() * SYMBOL_KEYS.length)];
+    return [top, middleSym, bottom];
+  });
 }
 
 // ========== Level Prize ==========

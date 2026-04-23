@@ -113,7 +113,11 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -171,10 +175,23 @@ CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[
     'http://localhost:3000',
     'http://localhost:5173',
 ])
+CORS_ALLOW_CREDENTIALS = True
+
+# CSRF trusted origins (needed if using session/cookie auth)
+CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://localhost:8000',
+])
 
 # --------------------------------------------------------------------------- #
 # Sinistrinha Game Settings
 # --------------------------------------------------------------------------- #
+
+# Supabase integration
+SUPABASE_URL = env('SUPABASE_URL', default='')
+SUPABASE_KEY = env('SUPABASE_KEY', default='')
+SUPABASE_SERVICE_ROLE_KEY = env('SUPABASE_SERVICE_ROLE_KEY', default='')
 
 # Probability engine URL (FastAPI microservice)
 PROBABILITY_ENGINE_URL = env(
