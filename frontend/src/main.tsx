@@ -3,9 +3,22 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
 import AppLayout from './components/layout/AppLayout';
 import GamePage from './pages/GamePage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import { RankingPage } from './pages/RankingPage';
+import { WalletPage } from './pages/WalletPage';
+import { HistoryPage } from './pages/HistoryPage';
 import './index.css';
 
 const router = createBrowserRouter([
+  {
+    path: '/login',
+    element: <LoginPage />,
+  },
+  {
+    path: '/register',
+    element: <RegisterPage />,
+  },
   {
     path: '/',
     element: <AppLayout />,
@@ -15,12 +28,16 @@ const router = createBrowserRouter([
         element: <GamePage />,
       },
       {
-        path: 'leaderboard',
-        element: <div className="p-8"><h1 className="text-2xl font-display">Ranking Global</h1></div>,
+        path: 'ranking',
+        element: <RankingPage />,
       },
       {
         path: 'wallet',
-        element: <div className="p-8"><h1 className="text-2xl font-display">Carteira e Depósitos</h1></div>,
+        element: <WalletPage />,
+      },
+      {
+        path: 'history',
+        element: <HistoryPage />,
       },
       {
         path: '*',
