@@ -36,6 +36,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   loginAsync: async (username, password) => {
     set({ isLoading: true, error: null });
+
+    // Mock Login para Admin/Teste
+    if (username === 'teste' && password === 'adm1234') {
+      const mockUser: User = {
+        id: 999,
+        username: 'teste',
+        email: 'admin@sinistrinha.com',
+        level: 100,
+        xp: 0,
+        balance: 100000,
+        freeSpins: 50,
+        createdAt: new Date().toISOString(),
+      };
+      const mockTokens = { access: 'mock_access', refresh: 'mock_refresh' };
+      setTokens(mockTokens);
+      set({ 
+        user: mockUser, 
+        isAuthenticated: true, 
+        isLoading: false,
+        tokens: mockTokens
+      });
+      return true;
+    }
+
     try {
       const { data } = await api.post<AuthTokens>('/auth/login/', { username, password });
       setTokens(data);
@@ -68,6 +92,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   fetchProfile: async () => {
+    const tokens = getTokens();
+    if (tokens?.access === 'mock_access') {
+      const mockUser: User = {
+        id: 999,
+        username: 'teste',
+        email: 'admin@sinistrinha.com',
+        level: 100,
+        xp: 0,
+        balance: 100000,
+        freeSpins: 50,
+        createdAt: new Date().toISOString(),
+      };
+      set({ user: mockUser });
+      return;
+    }
+
     try {
       const { data } = await api.get<UserProfile>('/user/profile/');
       const user = profileToUser(data);

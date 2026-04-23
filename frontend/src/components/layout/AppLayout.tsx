@@ -15,22 +15,7 @@ export default function AppLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Redirect to login if not authenticated (after session restore completes)
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, isLoading, navigate]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-brand-black flex items-center justify-center">
-        <div className="text-brand-gold text-xl animate-pulse">Carregando...</div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) return null;
 
   return (
     <div className="min-h-screen bg-brand-black flex flex-col text-white font-body selection:bg-brand-red selection:text-white relative">
