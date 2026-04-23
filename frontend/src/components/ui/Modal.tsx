@@ -12,6 +12,7 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
   const [isRendered, setIsRendered] = useState(isOpen);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (isOpen) setIsRendered(true);
   }, [isOpen]);
 

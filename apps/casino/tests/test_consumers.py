@@ -76,7 +76,7 @@ class CasinoConsumerTestCase(TestCase):
 
         response = await communicator.receive_json_from(timeout=5)
         self.assertEqual(response["type"], "jackpot_update")
-        self.assertEqual(response["data"]["jackpot_amount"], 5000.00)
+        self.assertEqual(response["message"]["jackpot_amount"], 5000.00)
 
         await communicator.disconnect()
 
@@ -155,6 +155,6 @@ class PlayerConsumerTestCase(TestCase):
 
         response = await communicator.receive_json_from(timeout=5)
         self.assertEqual(response["type"], "balance_update")
-        self.assertEqual(response["data"]["balance"], 1500.00)
+        self.assertEqual(response["message"]["balance"], 1500.00)
 
         await communicator.disconnect()

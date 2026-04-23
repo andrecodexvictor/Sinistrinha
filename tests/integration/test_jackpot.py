@@ -63,9 +63,10 @@ class TestJackpotSystem:
         amount = system.get_current_amount()
         assert amount == float(jackpot_pool.current_amount)
 
-    @patch('apps.game.views.requests.post')
+    @patch('apps.game.views._payout_calculator.calculate')
+    @patch('apps.game.views._weight_engine.spin_all')
     def test_jackpot_win_via_spin(
-        self, mock_post, authenticated_client, jackpot_pool
+        self, mock_spin_all, mock_calculate, authenticated_client, jackpot_pool
     ):
         """Test jackpot win through the spin endpoint."""
         client, user, profile = authenticated_client
@@ -75,31 +76,28 @@ class TestJackpotSystem:
         jackpot_pool.save()
 
         # Mock probability engine returning jackpot reels
-        mock_post.return_value = MagicMock(
-            status_code=200,
-            json=lambda: {
-                'reels': ['gorila_dourado'] * 5,
-                'payout': 750.0,  # base payout from engine
-                'combination_type': 'JACKPOT 5x gorila_dourado',
-                'near_miss_forced': False,
-                'wild_used': False,
-                'free_spins': 0,
-                'xp_earned': 100,
-                'session_rtp': 0.87,
-                'reel_icons': ['🦍'] * 5,
-                'multiplier': 150.0,
-                'is_jackpot': True,
-                'xp_bonus': 500,
-                'winning_symbol': 'gorila_dourado',
-                'match_count': 5,
-                'payout_multiplier': 150.0,
-                'scatter_count': 0,
-                'modifier_used': 1.0,
-                'reasoning': {},
-                'active_triggers': [],
-            },
-            raise_for_status=lambda: None,
-        )
+        mock_spin_all.return_value = ['gorila_dourado'] * 5
+        mock_calculate.return_value = {
+            'reels': ['gorila_dourado'] * 5,
+            'payout': 750.0,  # base payout from engine
+            'combination_type': 'JACKPOT 5x gorila_dourado',
+            'near_miss_forced': False,
+            'wild_used': False,
+            'free_spins': 0,
+            'xp_earned': 100,
+            'session_rtp': 0.87,
+            'reel_icons': ['🦍'] * 5,
+            'multiplier': 150.0,
+            'is_jackpot': True,
+            'xp_bonus': 500,
+            'winning_symbol': 'gorila_dourado',
+            'match_count': 5,
+            'payout_multiplier': 150.0,
+            'scatter_count': 0,
+            'modifier_used': 1.0,
+            'reasoning': {},
+            'active_triggers': [],
+        }
 
         initial_balance = profile.balance
         resp = client.post('/api/game/spin/', {'bet_amount': '5.00'})

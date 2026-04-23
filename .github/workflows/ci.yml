@@ -40,14 +40,17 @@ jobs:
         run: python manage.py migrate --settings=sinistrinha.settings.dev --noinput
         env:
           DJANGO_SETTINGS_MODULE: sinistrinha.settings.dev
+          SUPABASE_DB_URL: "sqlite:///db.sqlite3"
       - name: Django system check
         run: python manage.py check --settings=sinistrinha.settings.dev
         env:
           DJANGO_SETTINGS_MODULE: sinistrinha.settings.dev
+          SUPABASE_DB_URL: "sqlite:///db.sqlite3"
       - name: Run tests
         run: python -m pytest --tb=short -q
         env:
           DJANGO_SETTINGS_MODULE: sinistrinha.settings.dev
+          SUPABASE_DB_URL: "sqlite:///db.sqlite3"
 
   # ─────────────────────────────────────────────
   # Security Scan (DevSecOps)
@@ -127,9 +130,6 @@ jobs:
   probability-engine:
     name: Probability Engine CI
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: probability_engine
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -138,7 +138,7 @@ jobs:
       - name: Install dependencies
         run: pip install fastapi uvicorn pydantic numpy
       - name: Syntax check
-        run: python -c "import main; print('✅ Probability engine imports OK')"
+        run: python -c "from probability_engine import main; print('✅ Probability engine imports OK')"
 
   # ─────────────────────────────────────────────
   # Docker Compose Smoke Test
@@ -150,8 +150,10 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      - name: Copy env
-        run: cp .env.example .env
+      - name: Configure env
+        run: |
+          cp .env.example .env
+          echo "SUPABASE_DB_URL=sqlite:///db.sqlite3" >> .env
       - name: Build containers
         run: docker compose build
       - name: Start services

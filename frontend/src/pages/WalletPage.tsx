@@ -18,10 +18,6 @@ export const WalletPage: React.FC = () => {
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
 
-  useEffect(() => {
-    fetchTransactions();
-  }, []);
-
   const fetchTransactions = async () => {
     setLoading(true);
     try {
@@ -30,6 +26,11 @@ export const WalletPage: React.FC = () => {
     } catch { /* ignore */ }
     setLoading(false);
   };
+
+  useEffect(() => {
+    fetchTransactions();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleDeposit = async () => {
     const amount = parseFloat(depositAmount);

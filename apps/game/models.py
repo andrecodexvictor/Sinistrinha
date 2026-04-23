@@ -79,7 +79,7 @@ class FreeSpin(models.Model):
         ('admin', 'Admin Grant'),
     ]
 
-    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='free_spins')
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='free_spin_records')
     bet_amount = models.DecimalField(max_digits=12, decimal_places=2, default=1)
     is_used = models.BooleanField(default=False)
     source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='level_up')

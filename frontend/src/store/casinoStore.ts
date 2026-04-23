@@ -34,6 +34,7 @@ interface CasinoState {
   setJackpot: (value: number) => void;
   connectWebSocket: () => void;
   disconnectWebSocket: () => void;
+  generateFakeWins: (count: number) => void;
 }
 
 export const useCasinoStore = create<CasinoState>((set, get) => ({
@@ -97,6 +98,13 @@ export const useCasinoStore = create<CasinoState>((set, get) => ({
     const ws = get().ws;
     if (ws) ws.close();
     set({ ws: null, isConnected: false });
+  },
+
+  generateFakeWins: (count) => {
+    const newWins = Array.from({ length: count }, () => generateFakeWin());
+    set((state) => ({
+      winsFeed: [...newWins, ...state.winsFeed].slice(0, 50),
+    }));
   },
 }));
 
