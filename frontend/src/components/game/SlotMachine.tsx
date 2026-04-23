@@ -10,10 +10,10 @@ export default function SlotMachine() {
     
     const indices: number[] = [];
     
-    lastResult.winningLines.forEach(line => {
+    if (lastResult.totalWin > 0) {
       // In this version, we're only simulating Center Line wins (index 1)
-      if (line.lineIndex === 0) indices.push(1);
-    });
+      indices.push(1);
+    }
 
     return indices;
   };

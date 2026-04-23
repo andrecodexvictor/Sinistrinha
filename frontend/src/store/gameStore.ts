@@ -41,6 +41,7 @@ interface GameStoreState {
   dismissLevelUp: () => void;
   fetchJackpot: () => void;
   syncFromAuth: () => void;
+  collect: () => void;
 }
 
 export const useGameStore = create<GameStoreState>((set, get) => ({
@@ -130,6 +131,7 @@ export const useGameStore = create<GameStoreState>((set, get) => ({
 
   dismissWinAnimation: () => set({ showWinAnimation: false }),
   dismissLevelUp: () => set({ showLevelUp: false }),
+  collect: () => set({ showWinAnimation: false, lastResult: null }),
 
   /** Fetch current jackpot value from backend */
   fetchJackpot: async () => {
